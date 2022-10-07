@@ -2,5 +2,11 @@
 
 A tool to graph your own data.
 Data will be saved in browser (so on your own hard disk). You can input, import, browse and export.
-It's free. You can download the page and it will work for you.
+
+## status
+under-development.. idea stage.
+
+## usage
+It's gonna be free. You can download the page or this archive and it will work for you offline.
+
 You are welcome.
