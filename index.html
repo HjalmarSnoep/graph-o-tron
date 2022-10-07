@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head><title>graph-o-tron</title>
+<style>
+html,body{
+	margin: 0;
+	padding:0;
+	height: 100%;
+	font-family: sans-serif;
+}
+h1{
+	vertical-align: bottom;
+	margin: 0;
+	padding: 0;
+	padding-left: 10px;
+	background: black;
+	color: white;
+}
+.tabs{
+display: inline-block;
+}
+.tabs>button{
+	padding: 10px 15px;
+	border-radius: 15px 15px 0px 0px;
+	cursor: pointer;
+}
+.tabs>.active
+{
+	background: grey;
+	color: silver;
+	cursor: default;
+}
+#select_dataset
+{
+	padding: 5px;
+	background: silver;
+}
+section#create{
+padding: 15px;
+}
+</style>
+</head>
+<body>
+<h1>Graph-o-tron | <div class="tabs"><button class="active">input</button><button>import</button><button>browse</button><button>export</button><button>about</button></div></h1>
+<div id="select_dataset">
+<select id="ds"><option>New Dataset</option></select><button>select</button> Current-Dataset: <span id="current-ds">-none-</span>
+</div>
+<section id="create">
+	Your data set input contains:
+	<hr></hr>
+	no variables to input or show.
+	<hr></hr>
+	New variable name: <input></input><button> add variable </button>
+</section>
+
+</body>
+</html>
