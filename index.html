@@ -1,0 +1,404 @@
+<!doctype html>
+<html>
+<head><title>graph-o-tron</title>
+<style>
+html,body{
+	margin: 0;
+	padding:0;
+	height: 100%;
+	font-family: sans-serif;
+}
+h1{
+	vertical-align: bottom;
+	margin: 0;
+	padding: 0;
+	padding-left: 10px;
+	background: black;
+  background-image: linear-gradient(#008, blue);
+	color: #4af;
+}
+.tabs{
+display: inline-block;
+}
+.tabs>button{
+	padding: 10px 15px;
+	border-radius: 15px 15px 0px 0px;
+	cursor: pointer;
+	border: none;
+}
+.tabs>.active
+{
+	background: grey;
+	color: silver;
+	cursor: default;
+}
+#select_dataset
+{
+	padding: 5px;
+	background: #444;
+	color: silver;
+}
+#list-of-variables{
+  margin-top: 15px;
+  margin-bottom: 15px;
+border-top: 1px solid silver;
+border-bottom: 1px solid silver;
+}
+input{
+  width: 150px;
+}
+label
+{
+  display: inline-block;
+  width: 100px;
+}
+.pad{
+ padding: 15px 25px;
+ flex-grow: 1;
+ overflow-y: scroll;
+ background:rgba(205, 143, 43,0.7);
+}
+section#create{
+padding: 15px;
+}
+section.requester{
+  position: fixed;
+  top: 25px;
+  left: 25px;
+  right: 25px;
+  background: rgba(255,255,255,0.98);
+  border: 1px solid grey;
+  padding: 15px;
+}
+
+.feedback{
+  background: rgba(0,0,0,.25);
+  color: rgba(255,255,255,0.9);
+  padding: 15px;
+  margin: 10px 15px;
+}
+.example{
+  opacity: 0.6;
+  font-size:0.6em;
+}
+body{
+  display: flex;
+  flex-direction: column;
+}
+</style>
+</head>
+<body>
+<h1>Graph-o-tron |
+  <div id="menu" class="tabs">
+  </div>
+</h1>
+<div id="select_dataset">Current dataset:
+<select id="ds"><option>New Dataset</option></select>
+</div>
+<section id="input" class="pad">
+  <h2>Input data</h2>
+	<label>Date:</label><input type="date" id="input-date"> <button id="auto-set-date">today</button><br>
+	<label>Time:</label><input type="time" id="input-time"> <button id="auto-set-time">now</button><br>
+  	
+
+	<label><span id="input-value-name">value</span>:</label><input id="input-value"> <span id="input-value-unit"></span><br>
+	<label>Label:</label><input id="input-label">
+	<div id="feedback-input" class="feedback">
+	  	no current dataset
+	</div>
+</section>
+<section id="about" class="pad">
+  <h2>About Graph-o-tron</h2>
+  This is a free tool to record data over time, on any convenient device on your phone, tablet, laptop or other device capable of HTML support.
+  <h3>Privacy (storage)</h3>
+  The data is stored in the browser (cookie), so on your device itself, there is no server communication, your data is never shared over internet..
+  <h3>Filesystem</h3>
+  You can store data to share between devices (sneakernet).
+  Choose export and then on the new device choose import.
+  You should regularly backup your data, since browserdata is a temporary storage, it will NOT last for ever.
+  <h3>Usage cases</h3>
+  You can store, explore multiple datasets and view them at the same time, to look for differences.
+  There is different dataset types, that allow you to keep track of:
+  <ol>
+    <li>Weight, temperature, etc</li>
+    <li>Power or water usage (different in meter)</li>
+  </ol>
+  <h3>Labeled events</h3>
+  You can label events that you think will be of consequence, later you can view those labels in the datastream to see if it was correct.
+  <h3>Download</h3>
+  The whole application is a single HTML file, to facilitate easy download.<br>
+  You can download code and post issues here: <a href="https://github.com/HjalmarSnoep/graph-o-tron">https://github.com/HjalmarSnoep/graph-o-tron</a><br>
+  Everything here is free to use and adapt for personal use, but NOT for commercial use.
+  In that case, we can talk about a percentage :)
+</section>
+<section id="graph" class="pad">
+  <h2>Explore</h2>
+	<div id="feedback-options" class="feedback">
+	  	no current dataset to show
+	</div>
+</section>
+<section id="import" class="pad">
+  <h2>Import dataset</h2>
+	<div id="feedback-options" class="feedback">
+	  	no current dataset to import to
+	</div>
+</section>
+<section id="export" class="pad">
+  <h2>Import dataset</h2>
+	<div id="feedback-options" class="feedback">
+	  	no current dataset to export
+	</div>
+</section>
+<!-- SECTION dataset-options-->
+<section id="options" class="pad">
+  <h2>Dataset options</h2>
+	<div id="feedback-options" class="feedback">
+	  	no current dataset
+	</div>
+  <div id="dataset-properties">
+  </div><br>
+  <button>Delete current Dataset</button>
+</section>
+<!-- REQUESTER NEW DATASET -->
+<section id="new-dataset" class="requester">
+  <h2>Add new Dataset</h2>
+	<label>Data Name:</label><input type="string" id="new-dataset-name"> <span class="example">(example "my-weight")</span><br>
+	<label>Input name:</label><input type="string" id="new-dataset-value-name"> <span class="example">(example "New weight")</span><br>
+	<label>Unit name:</label><input type="string" id="new-dataset-unit-name"> <span class="example">(example "Kg")</span><br>
+	<br>
+  <button id="create-new-dataset">Create</button><button id="cancel-create-new-dataset">Cancel</button>
+</section>
+<!-- REQUESTER ERROR -->
+<section id="error" class="requester">
+  <h2>Error</h2>
+  <div id="error-message"></div>
+	<br>
+  <button id="cancel-error">OK</button>
+</section>
+
+<script>
+  // Model/datasets
+  var data=[];
+  function createDataSet(ev)
+  {
+    var o={};
+    o.name=document.getElementById("new-dataset-name").value;
+    o.value=document.getElementById("new-dataset-value-name").value;
+    o.unit=document.getElementById("new-dataset-unit-name").value;
+    if(o.value=="")o.value="value";
+    // check if name exists!
+    for(var i=0;i<data.length;i++)
+    {
+      if(data[i].name==o.name)
+      {
+        showError("A dataset with name: '"+o.name+"' allready exists");
+        return;
+      }
+    }
+    data.push(o);
+    // select this NEW dataset.
+    cancelRequester();
+    selectDataSet({currentTarget:document.getElementById("ds")});
+  }
+  //  app
+  
+  /* build the menu */
+  var menu=[
+    {label: "input",sector: "input", back: {r:205,g:143,b:43}, color: {r:90,g:69,b:34}},
+    {label: "explore graph",sector: "graph", back: {r:128,g:224,b:160}, color: {r:65,g:95,b:73}},
+    {label: "options",sector: "options", back: {r:116,g:37,b:99}, color: {r:177,g:148,b:166}},
+    {label: "import",sector: "import", back: {r:74,g:91,b:41}, color: {r:163,g:166,b:147}},
+    {label: "export",sector: "export", back: {r:33,g:119,b:232}, color: {r:150,g:175,b:211}},
+    {label: "about",sector: "about", back: {r:224,g:96,b:160}, color: {r:97,g:53,b:73}},
+  ];
+  showMenu("input");
+  
+  
+  
+  function clickMenu(ev)
+  {
+      showMenu(ev.currentTarget.innerHTML);
+  }
+  function showMenu(label)
+  {
+    // hide all sections.
+    var sections=document.getElementsByTagName("section");
+    console.log(sections.length)
+    for(var i=0;i<sections.length;i++)
+      sections[i].style.display="none";
+
+    var tabs=document.getElementById("menu");
+    tabs.innerHTML="";
+    for(var i=0;i<menu.length;i++)
+    {
+      var sector=document.getElementById(menu[i].sector);
+      if(sector!=null)
+      {
+        var tab=document.createElement("button");
+        tab.addEventListener("click",clickMenu);
+        tab.innerHTML=menu[i].label;
+//        sector.style.background="rgb("+menu[i].back.r+","+menu[i].back.g+","+menu[i].back.b+")";
+//        sector.style.color="rgb("+menu[i].color.r+","+menu[i].color.g+","+menu[i].color.b+")";
+        
+        tab.style.background="rgba(64, 112, 80, 0.9)";
+        tab.style.color="rgba(255,255,255,0.5)";
+        if(label==menu[i].label)
+        {
+          sector.style.display="block";
+          tab.style.background="rgb(205,143,43)";
+          tab.style.color="rgb(90,69,34)";
+          tab.className="active";
+        }
+        tabs.appendChild(tab);
+      }
+    }
+  }
+  
+  
+  // views
+
+
+
+  /* datasetbar */
+  setDatasetBar();
+  function setDatasetBar()
+  {
+    var ds=document.getElementById("ds");
+    ds.innerHTML="";
+    for(var i=0;i<data.length;i++)
+    {
+      var opt=document.createElement("option");
+      opt.id=i; // this one gets displayed, so that selecting new will be a change that we can detect..
+      opt.innerHTML=data[i].name;
+      ds.appendChild(opt);
+      
+    }
+    if(data.length==0)
+    {
+      var defopt=document.createElement("option");
+      defopt.id="none"; // this one gets displayed, so that selecting new will be a change that we can detect..
+      defopt.innerHTML="none";
+      ds.appendChild(defopt);
+    }
+    var defopt=document.createElement("option");
+    defopt.id="new";
+    defopt.innerHTML=" + +Create New+ + ";
+    ds.appendChild(defopt);
+    ds.addEventListener("change",selectDataSet);
+  }
+  
+  function selectDataSet(ev)
+  {
+    var ds=ev.currentTarget;
+    var selected=ds.selectedIndex; // this will coincide with the dataset number, because it is not alphabetised, use id if you do later alphabetise.
+    var inputFeedback=document.getElementById("feedback-input");
+    switch(ds.options[ds.selectedIndex].id)
+    {
+      case "new":
+        // select tabs datasets.
+          showRequester("new-dataset");
+      break;
+      case "none":
+        console.log("I don´t think this should EVER happen, but still.")
+      break;
+      default:
+        // set all the tabs to the right values.
+        inputFeedback.innerHTML="";
+        if(data.length!=0) // it really can´t be, but still, better to be safe than sorry.
+        {
+          // input
+            document.getElementById("input-value-name").innerHTML=data[selected].value;
+            document.getElementById("input-value-unit").innerHTML=data[selected].unit;
+            var button=document.createElement("button");
+            button.innerHTML="add value (and optionally Label)";
+            button.addEventListener("click",inputValue);
+            inputFeedback.appendChild(button);
+          // options
+        }
+
+        console.log(ds.options[ds.selectedIndex].id);
+    }
+    if(data.length==0)
+    {
+        inputFeedback.innerHTML="no current dataset";
+    }
+  }
+
+
+  /* input */
+  // do this on load.
+  autoSetDate();
+  autoSetTime();
+    // set date and time to
+  document.getElementById('auto-set-date').addEventListener("click",autoSetDate);
+  document.getElementById('auto-set-time').addEventListener("click",autoSetTime);
+  function autoSetDate()
+  {
+    var date = new Date();
+    var currentDate = date.toISOString().substring(0,10);
+    document.getElementById('input-date').value = currentDate;
+  }
+  function autoSetTime()
+  {
+    var date = new Date();
+    var currentTime = date.toISOString().substring(11,16);
+    document.getElementById('input-time').value = currentTime;
+  }
+  function inputValue()
+  {
+    var dataset=document.getElementById('ds').selectedIndex;
+    var date=document.getElementById('input-date').value;
+    var time=document.getElementById('input-time').value;
+    var value=document.getElementById('input-value').value;
+    var label=document.getElementById('input-label').value;
+    console.log("add to dataset "+dataset+": at: "+date+"/"+time+" value: "+value+ " label: "+label );
+    
+  }
+
+
+
+
+  /* REQUESTERS */
+  function cancelRequester()
+  {
+    // just close all :)
+    var requesters=document.getElementsByClassName("requester");
+    for(var i=0;i<requesters.length;i++) requesters[i].style.display="none";
+    // update the datasetbar so it will say none, if someone hit cancel on the add dataset and you can reselect add..
+    setDatasetBar();
+  }
+  function showError(message)
+  {
+    showRequester("error",{message: message});
+  }
+  function showRequester(id,opt)
+  {
+    var section=document.getElementById(id);
+    if(section==null)
+    {
+      console.log("sorry, no such requester");
+    }else
+    {
+      section.style.display="block";
+      switch(id)
+      {
+        case "error":
+          document.getElementById("error-message").innerHTML=opt.message;
+          document.getElementById("cancel-error").addEventListener("click",cancelRequester);
+        break;
+        case "new-dataset":
+          document.getElementById("create-new-dataset").addEventListener("click",createDataSet);
+          document.getElementById("cancel-create-new-dataset").addEventListener("click",cancelRequester);
+        break;
+        default:
+        
+          console.log("shown requester:"+id)
+      }
+    }
+  }
+
+    
+  /* sector data sets */
+</script>
+</body>
+</html>
