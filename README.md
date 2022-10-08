@@ -1,5 +1,7 @@
 # graph-o-tron
 
+https://hjalmarsnoep.github.io/graph-o-tron/
+
 A tool to graph your own data.
 Data will be saved in browser (so on your own hard disk). You can input, import, browse and export.
 
